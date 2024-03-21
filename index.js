@@ -21,6 +21,9 @@ app.use(express.json())
 // Usando el middleware personalizado tan solo después del middleware que captura solicitudes con datos JSON
 app.use(requestLogger)
 
+// Middleware que se usa para servir archivos estáticos
+app.use(express.static('dist'))
+
 // Middleware que se usa para permitir solicitudes desde cualquier origen
 app.use(cors())
 
