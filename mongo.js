@@ -9,6 +9,9 @@ const password = process.argv[2];
 
 const url = `mongodb+srv://dariorfm:${password}@clustera.vtlomcy.mongodb.net/?retryWrites=true&w=majority&appName=ClusterA` // URL de la base de datos;
 
+mongoose.set('strictQuery', false);
+mongoose.connect(url);
+
 const noteSchema = new mongoose.Schema({
     content: String,
     important: Boolean
