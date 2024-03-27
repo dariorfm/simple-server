@@ -1,6 +1,23 @@
 const express = require('express')
 const cors = require('cors')
+const mongoose = require('mongoose');
 const app = express()
+
+const password = process.argv[2];
+
+const url = `mongodb+srv://dariorfm:${password}@clustera.vtlomcy.mongodb.net/noteApp?retryWrites=true&w=majority&appName=ClusterA` // URL de la base de datos;
+
+mongoose.set('strictQuery', false);
+mongoose.connect(url);
+
+const noteSchema = new mongoose.Schema({
+    content: String,
+    important: Boolean
+});
+
+const Note = mongoose.model('Note', noteSchema);
+
+
 
 // Definiendo middleware personalizado
 const requestLogger = (req, res, next) => {
@@ -65,7 +82,9 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/notes', (req, res) => {
-    res.json(notes)
+    Note.find({}).then(result => {
+        res.json(result)
+    })
 })
 
 app.get('/api/notes/:id', (req, res) => {
