@@ -1,30 +1,8 @@
-const express = require('express')
-const cors = require('cors')
-const mongoose = require('mongoose');
-const app = express()
-
-const password = process.argv[2];
-
-const url = `mongodb+srv://dariorfm:${password}@clustera.vtlomcy.mongodb.net/noteApp?retryWrites=true&w=majority&appName=ClusterA` // URL de la base de datos;
-
-mongoose.set('strictQuery', false);
-mongoose.connect(url);
-
-const noteSchema = new mongoose.Schema({
-    content: String,
-    important: Boolean
-});
-
-noteSchema.set('toJson', {
-    transform: (document, returnedObject) => {
-        returnedObject.id = returnedObject._id.toString()
-        delete returnedObject._id
-        delete returnedObject.__v
-    }
-})
-
-const Note = mongoose.model('Note', noteSchema);
-
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const Note = require('./models/note');
 
 
 // Definiendo middleware personalizado
@@ -139,7 +117,7 @@ app.post('/api/notes', (req, res) => {
 
 app.use(unknownEndpoint)
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
