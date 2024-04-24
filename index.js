@@ -14,6 +14,8 @@ const requestLogger = (req, res, next) => {
     next()
 }
 
+// Middleware que se usa para servir archivos estáticos
+app.use(express.static('dist'))
 
 // Middleware que se usa para capturar solicitudes que contienen datos JSON
 // Los datos se almacenan en req.body
@@ -24,19 +26,10 @@ app.use(express.json())
 // Usando el middleware personalizado tan solo después del middleware que captura solicitudes con datos JSON
 app.use(requestLogger)
 
-// Middleware que se usa para servir archivos estáticos
-app.use(express.static('dist'))
 
 // Middleware que se usa para permitir solicitudes desde cualquier origen
 app.use(cors())
 
-// Middleware que se usa para captirar solicitudes desconocidas
-// Tener en cuenta que el orden de los middleware es importante
-// Si se coloca al final, capturará todas las solicitudes que no hayan sido capturadas por los middleware anteriores
-// Esta es solo la definición de la función, no se está usando, se usará después de las rutas
-const unknownEndpoint = (req, res) => {
-    res.status(404).send({ error: 'unknown endpoint' })
-}
 
 // Datos de prueba o recursos de la API
 let notes = [
@@ -73,26 +66,32 @@ app.get('/api/notes', (req, res) => {
     })
 })
 
-app.get('/api/notes/:id', (req, res) => {
+app.get('/api/notes/:id', (req, res, next) => {
     Note.findById(req.params.id).then(note => {
-        res.json(note)
+        if (note) {
+            res.json(note)
+        } else {
+            res.status(404).end()
+        }
     })
+    .catch(error => next(error))
 })
 
-app.delete('/api/notes/:id', (req, res) => {
-    const id = Number(req.params.id)
-    notes = notes.filter(note => note.id !== id)
-    res.status(204).end()
+app.delete('/api/notes/:id', (req, res, next) => {
+    Note.findByIdAndDelete(req.params.id)
+        .then(result => {
+            res.status(204).end()
+            console.log('This line prints the result parameter:' + result)
+        })
+        .catch(error => next(error))
 })
 
 
 
-app.post('/api/notes', (req, res) => {
+app.post('/api/notes', (req, res, next) => {
     const body = req.body
     if (body.content === undefined) {
-        return res.status(400).json({
-            error: 'content missing'
-        })
+        return res.status(400).json({error: 'content missing'})
     }
     const note = new Note({
         content: body.content,
@@ -103,13 +102,53 @@ app.post('/api/notes', (req, res) => {
     note.save().then(savedNote => {
         res.json(savedNote)
     })
+    .catch(error => next(error))
         
 })
 
 
+app.put('/api/notes/:id', (req, res, next) => {
+    const {content, important} = req.body
+
+    Note.findByIdAndUpdate(
+        req.params.id, 
+        {content, important},
+        { new: true, runValidators: true, context: 'query' }
+    )
+        .then(updatedNote => {
+            res.json(updatedNote)
+        })
+        .catch(error => next(error))
+})
+
+
+// Middleware que se usa para captirar solicitudes desconocidas
+// Tener en cuenta que el orden de los middleware es importante
+// Si se coloca al final, capturará todas las solicitudes que no hayan sido capturadas por los middleware anteriores
+// Esta es solo la definición de la función, no se está usando, se usará después de las rutas
+const unknownEndpoint = (req, res) => {
+    res.status(404).send({ error: 'unknown endpoint' })
+}
+
 app.use(unknownEndpoint)
 
+// Middleware que se usa para manejar errores
+const errorHandler = (error, req, res, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return res.status(400).send({ error: 'malformatted id' })   
+    } else if (error.name === 'ValidationError') {
+        return res.status(400).json({ error: error.message })
+    }
+
+    next(error)
+}
+
+app.use(errorHandler)
+
 const PORT = process.env.PORT
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
