@@ -29,7 +29,7 @@ app.use(requestLogger)
 app.use(cors())
 
 // Datos de prueba o recursos de la API
-const notes = [
+/* const notes = [
   {
     id: 1,
     content: 'HTML is easy',
@@ -49,6 +49,7 @@ const notes = [
     important: true
   }
 ]
+*/
 
 // Rutas
 app.get('/', (req, res) => {
