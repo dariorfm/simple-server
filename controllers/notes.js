@@ -6,17 +6,16 @@ notesRouter.get('/', async (req, res) => {
   res.json(notes)
 })
 
-notesRouter.get('/:id', async (req, res, next) => {
-  try {
-    const note = await Note.findById(req.params.id)
-    if (note) {
-      res.json(note)
-    } else {
-      res.status(404).end()
-    }
-  } catch (exception) {
-    next(exception)
+notesRouter.put('/:id', async (req, res, next) => {
+  const { content, important } = req.body
+
+  const note = {
+    content,
+    important
   }
+
+  const updatedNote = await Note.findByIdAndUpdate(req.params.id, note, { new: true })
+  res.json(updatedNote)
 })
 
 notesRouter.post('/', async (req, res, next) => {
@@ -27,36 +26,23 @@ notesRouter.post('/', async (req, res, next) => {
     important: body.important || false,
     date: new Date()
   })
-  try {
-    const savedNote = await note.save()
-    res.status(201).json(savedNote)
-  } catch (exception) {
-    next(exception)
+
+  const savedNote = await note.save()
+  res.status(201).json(savedNote)
+})
+
+notesRouter.get('/:id', async (req, res, next) => {
+  const note = await Note.findById(req.params.id)
+  if (note) {
+    res.json(note)
+  } else {
+    res.status(404).end()
   }
 })
 
 notesRouter.delete('/:id', async (req, res, next) => {
-  try {
-    await Note.findByIdAndDelete(req.params.id)
-    res.status(204).end()
-  } catch (exception) {
-    next(exception)
-  }
-})
-
-notesRouter.put('/:id', (req, res, next) => {
-  const { content, important } = req.body
-
-  const note = {
-    content,
-    important
-  }
-
-  Note.findByIdAndUpdate(req.params.id, note, { new: true })
-    .then(updatedNote => {
-      res.json(updatedNote)
-    })
-    .catch(error => next(error))
+  await Note.findByIdAndDelete(req.params.id)
+  res.status(204).end()
 })
 
 module.exports = notesRouter
